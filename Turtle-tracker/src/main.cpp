@@ -5,6 +5,8 @@
 #include <Wire.h>
 #include <Adafruit_BMP085.h>
 #include <CayenneLPP.h>
+#include <LowPower.h>
+#include <NewPing.h>
 
 // This EUI must be in little-endian format, so least-significant-byte
 // first. When copying an EUI from ttnctl output, this means to reverse
@@ -35,6 +37,8 @@ void os_getDevKey (u1_t* buf) {
 
 Adafruit_BMP085 bmp;
 
+NewPing sonar(5, 6 , 400);
+
 //static uint8_t mydata[] = "first value";
 //static uint8_t mydata[] = 0x01670110;
 CayenneLPP lpp(51);
@@ -52,6 +56,7 @@ const lmic_pinmap lmic_pins = {
   .rst = 3,
   .dio = {2, 8, 7},
 };
+
 
 void do_send(osjob_t* j);
 
@@ -129,6 +134,9 @@ void do_send(osjob_t* j) {
   lpp.reset();
   lpp.addTemperature(1, bmp.readTemperature());
   lpp.addBarometricPressure(2, bmp.readPressure());
+  lpp.addBarometricPressure(3, bmp.readAltitude());
+  lpp.addBarometricPressure(4, sonar.ping_cm());
+
   // Check if there is not a current TX/RX job running
   if (LMIC.opmode & OP_TXRXPEND) {
     Serial.println(F("OP_TXRXPEND, not sending"));
@@ -139,10 +147,11 @@ void do_send(osjob_t* j) {
     Serial.println(F("Packet queued"));
   }
   // Next TX is scheduled after TX_COMPLETE event.
+  //LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
 }
 
-
 void setup() {
+
   //while (!Serial);
   Serial.begin(9600);
 
